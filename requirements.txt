@@ -1,0 +1,21 @@
+Basic requirements:
+    Implement a 1d cellular automaton capable of executing Rule 30, as well as a terminal-based display - Done
+
+Simple extensions:
+    converting strings in the format "010101001" to binary arrays
+    converting binary numbers to decimal and back (i.e. converting 10000101 to 133 and back)
+    saving the output to a text file and loading back
+
+Other simple extensions:
+    Implement rules besides rule 30 - Done
+    Allow the user to input a different length for a generation and different generation count - Done
+    Allow the user to create the first generation
+    Wrap the ends of the array so that the leftmost and rightmost cells behave as if they were neighbours
+    
+Further extensions:
+    Write the progress of the automaton to a text file
+    Implement Conway's game of life, which is a 2d automaton
+    Implement a different 2d automaton
+    Implement wrapping on the 2d automaton (i.e. it must behave as if going out of 
+    bounds up makes you appear at the bottom, and exiting on the left makes you 
+    appear on the right)

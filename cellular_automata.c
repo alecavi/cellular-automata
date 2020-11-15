@@ -11,7 +11,7 @@ void printGeneration(bool generation[], int width);
 long promptForInput(char *message, long min, long max);
 
 int main() {
-    int width = (int) promptForInput("Insert the width of the cellular array", 1, 201);
+    int width = (int) promptForInput("Insert the width of the cellular array", 1, 1001);
     unsigned char rule = (unsigned char) promptForInput("Insert the rule", 0, 255);
     int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
 
@@ -31,6 +31,8 @@ int main() {
     free(currentGeneration);
     return 0;
 }
+
+// TODO: Bit manipulation is technically more efficient than using an array, but the array is more readable. Either would be fine, just tell me what you prefer
 
 // You can write down the state of a cell's parents as a string of 3 bits (a 3-bit unsigned integer, if you will).
 // 101, for example (left and right parents alive, central parent dead).
@@ -69,7 +71,7 @@ int advanceGeneration(bool currentGeneration[], int gridWidth, unsigned char rul
         if(currentGeneration[i])                            parentsConfig |= 2; //0b010
         if(i < gridWidth - 1 && currentGeneration[i + 1])   parentsConfig |= 1; //0b001
 
-        char mask = 1 << parentsConfig;
+        char mask = 1 << parentsConfig; 
 
        nextGeneration[i] = !!(rule & mask);
     }
