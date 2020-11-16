@@ -5,14 +5,17 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
-int advanceGeneration(bool currentGeneration[], int gridWidth, unsigned char rule);
-void printGeneration(bool generation[], int width);
+int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule);
+void printGeneration(bool *generation, int width);
 long promptForInput(char *message, long min, long max);
+unsigned char promptForRule();
 
+//FIXME: Improve error handling for malloc failures
 int main() {
-    int width = (int) promptForInput("Insert the width of the cellular array", 1, 1001);
-    unsigned char rule = (unsigned char) promptForInput("Insert the rule", 0, 255);
+    int width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
+    unsigned char rule = promptForRule();
     int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
 
     bool *currentGeneration = calloc(width, sizeof(bool));
@@ -80,7 +83,7 @@ int advanceGeneration(bool currentGeneration[], int gridWidth, unsigned char rul
     return 0;
 }
 
-void printGeneration(bool generation[], int width) {
+void printGeneration(bool *generation, int width) {
     for(int i = 0; i < width; ++i) {
         if(generation[i]) {
            printf("#");
@@ -92,40 +95,73 @@ void printGeneration(bool generation[], int width) {
 }
 
 long promptForInput(char *message, long min, long max) {
-    while (true) {
+    while(true) {
         printf("%s\n", message);
-        char buffer[9] = {0};
-        fgets(buffer, 9, stdin);
+        char buffer[128] = {'\0'};
+        fgets(buffer, 128, stdin);
 
         errno = 0;
-        char *end;
-        long number = strtol(buffer, &end, 10);
+        char *endptr;
+        long numOrErr = strtol(buffer, &endptr, 10);
         
-        if (buffer == end) {
-            printf("ERROR: No input was provided\n");
-            continue;
-        } else if (errno == ERANGE && number == LONG_MIN) {
-            printf ("ERROR: The input provided is too small (minimum input is %ld)\n", min);
-            continue;
-        } else if (errno == ERANGE && number == LONG_MAX) {
-            printf ("ERROR: The input provided is too large (maximum input is %ld)\n", max);
-            continue;
-        } else if (errno != 0 && number == 0) {
-            printf ("ERROR: Invalid input\n");
-            continue;
-        } else if (errno == 0 && *end != '\n') {
-            printf("WARNING: Some of the input could not be interpreted as a number and will be ignored\n");
+        if(buffer[0] == '\0') {
+            fprintf(stderr, "ERROR: No number was provided\n");
+        } else if(errno == ERANGE) {
+            if(numOrErr == LONG_MIN) fprintf(stderr, "ERROR: The input provided is too small (minimum input is %lu\n", min);
+            else fprintf(stderr, "ERROR: The input provided is too large (maximum input is %lu\n", max);
+        } else if(errno != 0) {
+            fprintf(stderr, "ERROR: Invalid input\n");
+        } else if(*endptr != '\0' && *endptr != '\n') {
+            fprintf(stderr, "ERROR: Some of the input is valid, but some is not\n");
+        } else if(numOrErr < min) {
+            fprintf(stderr, "ERROR: The input provided is too small (minimum input is %lu\n", min);
+        } else if(numOrErr > max) {
+            fprintf(stderr, "ERROR: The input provided is too large (maximum input is %lu\n", max);
+        } else {
+            return numOrErr;
         }
-        
-        if(number < min) {
-            printf ("ERROR: The input provided is too small (minimum input is %ld)\n", min);
-            continue;
-        } else if(number > max) {
-            printf ("ERROR: The input provided is too large (maximum input is %ld)\n", max);
-            continue;
-        }
-        
-        return number;
     }
 }
 
+unsigned char promptForRule() {
+    while(true) {
+        printf("Input the rule. Accepted formats are \"129\", \"0b10011001\", and \"0xABCD\"\n");
+        char buffer[128] = {'\0'}; 
+        fgets(buffer, 128,  stdin); 
+    
+        int base;
+        char *bufferStart;
+        if(buffer[0] == '0') {
+            if(tolower(buffer[1]) == 'b') {
+                base = 2;
+            } else if(tolower(buffer[1]) == 'x') {
+                base = 16;
+            }
+            bufferStart = &buffer[2];
+        } else {
+            base = 10;
+            bufferStart = buffer;
+        }
+
+        errno = 0;
+        char *endptr;
+        long numOrErr = strtol(bufferStart, &endptr, base);
+
+        if(*bufferStart == '\0') {
+            fprintf(stderr, "ERROR: No number was provided\n");
+        } else if(errno == ERANGE) {
+            if(numOrErr == LONG_MIN) fprintf(stderr, "ERROR: The input provided is too small (minimum input is 0\n");
+            else fprintf(stderr, "ERROR: The input provided is too large (maximum input is 255\n");
+        } else if(errno != 0) {
+            fprintf(stderr, "ERROR: Invalid input\n");
+        } else if(*endptr != '\0' && *endptr != '\n') {
+            fprintf(stderr, "ERROR: Some of the input is valid, but some is not\n");
+        } else if(numOrErr < 0) {
+            fprintf(stderr, "ERROR: The input provided is too small (minimum input is 0\n");
+        } else if(numOrErr > 255) {
+            fprintf(stderr, "ERROR: The input provided is too large (maximum input is 255\n");
+        } else {
+            return (unsigned char) numOrErr;
+        }
+    }   
+}
