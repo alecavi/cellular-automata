@@ -35,35 +35,7 @@ int main() {
     return 0;
 }
 
-// TODO: Bit manipulation is technically more efficient than using an array, but the array is more readable. Either would be fine, just tell me what you prefer
-
-// You can write down the state of a cell's parents as a string of 3 bits (a 3-bit unsigned integer, if you will).
-// 101, for example (left and right parents alive, central parent dead).
-// Conventionally, they're ordered from the biggest to the smallest: 111 110 101 100 011 010 001 000.
-// Now, if you write down, in their order, the 8 bits that make up a rule, you can draw a 1-1 correspondence
-// between each of these bits and each of the parent's states.
-// For example, let's look at the diagram for rule 30 (00011110 in binary), below
-//
-// 111 110 101 100 011 010 001 000
-// 0   0   0   1   1   1   1   0  
-//
-// You can use this as a lookup table. For example, if your parents' state is 110, that means that 
-// your own state should be 0, as 110 is paired with 0 in the table.
-//
-// The code below looks at every cell's 3 parents, and sets the corresponding bit in a 3-bit integer (stored in an 8-bit one).
-// This works because, for example, if your left parent is alive, we know for sure 
-// that the state of your parents looks like 1xx
-// (We also need to handle the leftmost and rightmost cells specially, because accessing their left and right parents respectively
-// would go out of the array's bounds. The way they're handled here simply behaves as if there was a dead cell out of bounds)
-// We can use bitwise ORs to set individual bits. 
-//
-// By doing the above, we create a number between 0 (000) and 7 (111) inclusive.
-// Then, we want to know if the bit positioned at that number (counting from the right,
-// considering the last bit as positioned at 0) is set or not. To do that, we can use a bitwise AND:
-// To know whether bit 2 is set in N, one can use N & 0000_0100. It yields 0 if the bit is not set, and 0000_0100 if it is.
-// To produce the correct mask for the bitwise AND, we simply bitshift 1 by the appropriate number. 
-// For example, 0000_0001 << 2 yields 0000_0100, which is the mask we need to look at bit 2.
-int advanceGeneration(bool currentGeneration[], int gridWidth, unsigned char rule) {
+int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule) {
     bool *nextGeneration = malloc(gridWidth * sizeof(bool));
     if (nextGeneration == NULL) return 1;
 
