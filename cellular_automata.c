@@ -8,7 +8,7 @@
 #include <ctype.h>
 
 int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule);
-void printGeneration(bool *generation, int width);
+void printGeneration(bool *generation, int width, FILE *fp);
 long promptForInput(char *message, long min, long max);
 unsigned char promptForRule();
 
@@ -23,15 +23,18 @@ int main() {
 
     currentGeneration[width / 2 + 1] = true;
     
-    printGeneration(currentGeneration, width);    
+    FILE *fp;
+    fp=fopen("savedautomata.txt", "w");
+    printGeneration(currentGeneration, width, fp);    
 
     for(int i = 0; i < generations; ++i) {
         int err = advanceGeneration(currentGeneration, width, rule);
         if (err != 0) return 1;
 
-        printGeneration(currentGeneration, width);    
+        printGeneration(currentGeneration, width, fp);    
     }
     free(currentGeneration);
+    fclose(fp);
     return 0;
 }
 
@@ -55,15 +58,18 @@ int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule
     return 0;
 }
 
-void printGeneration(bool *generation, int width) {
+void printGeneration(bool *generation, int width, FILE *fp) {
     for(int i = 0; i < width; ++i) {
         if(generation[i]) {
            printf("#");
+           fprintf(fp, "#");
         } else {
            printf(".");
+           fprintf(fp, ".");
         }
     }
     printf("\n");
+    fprintf(fp, "\n");
 }
 
 long promptForInput(char *message, long min, long max) {
