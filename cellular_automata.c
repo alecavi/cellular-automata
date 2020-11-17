@@ -16,6 +16,32 @@ void clean_stdin();
 
 //FIXME: Improve error handling for malloc failures
 int main() {
+    FILE *fp;
+    fp=fopen("savedautomata.txt", "r");
+    if(fp!=NULL)
+    {
+        printf("Would you like to load from file? (y/n)\n");
+        char response;
+        scanf("%c", &response);
+        if(response=='y')
+        {
+            char c = fgetc(fp);
+            while(c!=EOF)
+            {
+                printf("%c",c);
+                c = fgetc(fp);
+            }
+        }
+        else if (response=='n') 
+        {
+            printf("Continuing program...\n");
+        }
+        else 
+        {
+            printf("Wrong input.\n");
+        }
+    }
+    clean_stdin();
     srand(time(NULL));
     int width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
 
@@ -110,7 +136,6 @@ int main() {
         }
     }
     
-    FILE *fp;
     fp=fopen("savedautomata.txt", "w");
     printGeneration(currentGeneration, width, fp);    
 
