@@ -6,16 +6,46 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule);
 void printGeneration(bool *generation, int width, FILE *fp);
 long promptForInput(char *message, long min, long max);
 unsigned char promptForRule();
+void clean_stdin();
 
 //FIXME: Improve error handling for malloc failures
 int main() {
+    srand(time(NULL));
     int width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
-    unsigned char rule = promptForRule();
+
+    unsigned char rule;
+    int unfinished = 1;
+    while(unfinished)
+    {
+        printf("Would you like to autogenerate rule? (y/n)\n");
+        char response;
+        scanf("%c", &response);
+        if(response=='y')
+        {
+            int r = rand();
+            int newRule = r%255;
+            rule = (unsigned char) newRule;
+            printf("Generated rule: %d\n", newRule);
+            unfinished=0;
+        }
+        else if (response=='n') 
+        {
+            clean_stdin();
+            rule = promptForRule();
+            unfinished=0;
+        }
+        else 
+        {
+            clean_stdin();
+            printf("Wrong input.");
+        }
+    }
     int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
 
     bool *currentGeneration = calloc(width, sizeof(bool));
@@ -142,4 +172,13 @@ unsigned char promptForRule() {
             return (unsigned char) numOrErr;
         }
     }   
+}
+
+void clean_stdin(void)
+{
+    int c;
+    do 
+    {
+        c = getchar();
+    } while (c != '\n' && c != EOF);
 }
