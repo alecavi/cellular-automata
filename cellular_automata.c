@@ -158,8 +158,10 @@ int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule
         char parentsConfig = 0;
 
         if(i > 0 && currentGeneration[i - 1])               parentsConfig |= 4; //0b100
+        if(i == 0 && currentGeneration[gridWidth - 1])      parentsConfig |= 4; //0b100
         if(currentGeneration[i])                            parentsConfig |= 2; //0b010
         if(i < gridWidth - 1 && currentGeneration[i + 1])   parentsConfig |= 1; //0b001
+        if(i == gridWidth - 1 && currentGeneration[0])      parentsConfig |= 1; //0b001
 
         char mask = 1 << parentsConfig; 
 
