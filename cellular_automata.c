@@ -28,6 +28,7 @@ int main() {
         scanf("%c", &response);
         if(response=='y')
         {
+            clean_stdin();
             int r = rand();
             int newRule = r%255;
             rule = (unsigned char) newRule;
@@ -47,11 +48,67 @@ int main() {
         }
     }
     int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
-
     bool *currentGeneration = calloc(width, sizeof(bool));
     if (currentGeneration == NULL) return 1;
 
-    currentGeneration[width / 2 + 1] = true;
+    unfinished=1;
+    while(unfinished)
+    {
+    char response;
+    clean_stdin();
+    printf("Would you like to create first generation? (y/n)\n");
+    scanf("%c", &response);
+        if(response=='y')
+        {
+            int correctInput=0;
+            char input[width];
+            while(!correctInput)
+            {
+                clean_stdin();
+                printf("Enter first generation (e.g. 0001100):\n");
+                scanf("%s",input);
+                int length = strlen(input);
+                if(width!=length)
+                {
+                    printf("Input length doesn't match width (width: %d)\n",width);
+                }
+                else
+                {
+                    correctInput=1;
+
+                    for(int i=0; i<width; i++)
+                    {
+                        if(input[i]=='0')
+                        {
+                            currentGeneration[i] = false;
+                        }
+                        else if(input[i]=='1')
+                        {
+                            currentGeneration[i] = true;
+                        }
+                        else 
+                        {
+                            printf("Found unrecognised character.\n");
+                            correctInput=0;
+                            break;
+                        }
+                    }
+                }
+            }
+            unfinished=0;
+        }
+        else if (response=='n') 
+        {
+            clean_stdin();
+            unfinished=0;
+            currentGeneration[width / 2] = true;
+        }
+        else 
+        {
+            clean_stdin();
+            printf("Wrong input.");
+        }
+    }
     
     FILE *fp;
     fp=fopen("savedautomata.txt", "w");
