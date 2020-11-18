@@ -3,7 +3,7 @@
 int strToBinArr(char *string, bool* out, int length);
 void binArrToStr(bool *arr, char *out, int length);
 int binToDec(bool *bin, int length);
-void decToBin(int dec, bool* out);
+int decToBin(int dec, bool* out, int length);
 
 int strToBinArr(char *string, bool* out, int length) {
     for(int i = 0; i < length; ++i) {
@@ -28,17 +28,22 @@ void binArrToStr(bool *arr, char *out, int length) {
 }
 
 int binToDec(bool *bin, int length) {
+    if(length < 1) return 0; //strtol returns 0 on error
+
     int out = 0;
+    int first_bit = 1 << (length - 1);
     for(int i = 0; i < length; ++i) {
-        if(bin[i]) out |= 1 << i;
+        if(bin[i]) out |= first_bit >> i; 
     }
     return out;
 }
 
-void decToBin(int dec, bool* out) {
-    int firstBit = 1 << (sizeof(int) * 8 - 1);
+int decToBin(int dec, bool* out, int length) {
+    if(length < 1) return 1; //but it's more common to return 1 on error
 
-    for(int i = 0; i < (int) sizeof(int) * 8; ++i) {
-        out[i] = dec & (firstBit >> i );
+    int first_bit = 1 << (length - 1);
+    for(int i = 0; i < length; ++i) {
+       out[i] = dec & first_bit >> i;
     }
+    return 0;
 }
