@@ -6,20 +6,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "conversions.c"
 
-int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule);
+int advanceGeneration(bool *currentGeneration, int gridWidth, bool *rule);
 void printGeneration(bool *generation, int width);
 long promptForInput(char *message, long min, long max);
 unsigned char promptForRule();
 
-//FIXME: Improve error handling for malloc failures
 int main() {
     int width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
-    unsigned char rule = promptForRule();
+    unsigned char rulenum = promptForRule();
     int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
 
+    bool rule[8];
+    decToBin(rulenum, rule, 8);
+
     bool *currentGeneration = calloc(width, sizeof(bool));
-    if (currentGeneration == NULL) return 1;
+    if (currentGeneration == NULL) {
+        printf("Internal error: the program could not obtain necessary memory");
+        return 1;
+    }
 
     currentGeneration[width / 2 + 1] = true;
     
@@ -32,23 +38,27 @@ int main() {
         printGeneration(currentGeneration, width);    
     }
     free(currentGeneration);
+
     return 0;
+
 }
 
-int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule) {
+int advanceGeneration(bool *currentGeneration, int gridWidth, bool *rule) {
     bool *nextGeneration = malloc(gridWidth * sizeof(bool));
-    if (nextGeneration == NULL) return 1;
+    if (nextGeneration == NULL) {
+        printf("Internal error: the program could not obtain necessary memory");
+        return 1;
+    }
 
     for(int i = 0; i < gridWidth; ++i) {
-        char parentsConfig = 0;
+        int parentsConfig = 0;
 
         if(i > 0 && currentGeneration[i - 1])               parentsConfig |= 4; //0b100
         if(currentGeneration[i])                            parentsConfig |= 2; //0b010
         if(i < gridWidth - 1 && currentGeneration[i + 1])   parentsConfig |= 1; //0b001
 
-        char mask = 1 << parentsConfig; 
 
-       nextGeneration[i] = !!(rule & mask);
+       nextGeneration[i] = rule[parentsConfig];
     }
     memcpy(currentGeneration, nextGeneration, gridWidth * sizeof(bool));
     free(nextGeneration);
