@@ -16,36 +16,90 @@ void clean_stdin();
 
 //FIXME: Improve error handling for malloc failures
 int main() {
+    int width, generations;
+    unsigned char rule;
     FILE *fp;
-    fp=fopen("savedautomata.txt", "r");
-    if(fp!=NULL)
+    fp=fopen("savedautomata.txt", "r+");
+    if(fp!=NULL) 
     {
-        printf("Would you like to load from file? (y/n)\n");
-        char response;
-        scanf("%c", &response);
-        if(response=='y')
+        fseek(fp,0,SEEK_END);
+        if(ftell(fp)!=0)
         {
-            char c = fgetc(fp);
-            while(c!=EOF)
+            fseek(fp,0,SEEK_SET);
+            printf("Would you like to load from file and continue running the automata? (y/n)\n");
+            char response;
+            scanf("%c", &response);
+            if(response=='y')
             {
-                printf("%c",c);
-                c = fgetc(fp);
+                char *line=NULL;
+                size_t len = 0;
+                ssize_t read;
+
+                int lineNumber=0;
+                char lastGen[128];
+                while((read = getline(&line, &len, fp)) != -1)
+                {
+                    if(lineNumber==0) 
+                    {
+                        width = atoi(line);
+                    }
+
+                    else if (lineNumber==1) rule = (unsigned char) strtol(line,NULL,10);
+                    else if (lineNumber==2) generations = atoi(line);
+                    else if (lineNumber==generations+2) 
+                    {
+                        strcpy(lastGen,line);
+                        printf("%s", line);
+                    }
+                    else printf("%s", line);
+
+                    lineNumber++;
+                }
+
+                bool *newGen = calloc(width, sizeof(bool));
+                if (newGen == NULL) return 1;
+                for(int i=0; i<width; i++)
+                {
+                    if(lastGen[i]=='.')
+                    {
+                        newGen[i] = false;
+                    }
+                    else if(lastGen[i]=='#')
+                    {
+                        newGen[i] = true;
+                    }
+                }
+                clean_stdin();
+                generations = (int) promptForInput("Insert the amount of additional generations to run", 1, INT_MAX);
+
+                for(int i = 0; i < generations; ++i) {
+                    int err = advanceGeneration(newGen, width, rule);
+                    if (err != 0) return 1;
+
+                    printGeneration(newGen, width, fp);    
+                }
+            }
+            else if (response=='n') 
+            {
+                printf("Continuing program...\n");
+            }
+            else 
+            {
+                printf("Wrong input.\n");
             }
         }
-        else if (response=='n') 
-        {
-            printf("Continuing program...\n");
-        }
-        else 
-        {
-            printf("Wrong input.\n");
-        }
+        fclose(fp);
+        fp=fopen("savedautomata.txt", "w");
+    }
+    else 
+    {
+        fclose(fp);
+        fp=fopen("savedautomata.txt", "w");
     }
     clean_stdin();
     srand(time(NULL));
-    int width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
-
-    unsigned char rule;
+    width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
+    fprintf(fp, "%d\n", width);
     int unfinished = 1;
     while(unfinished)
     {
@@ -73,7 +127,9 @@ int main() {
             printf("Wrong input.");
         }
     }
-    int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
+    fprintf(fp, "%hhu\n", rule);
+    generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
+    fprintf(fp, "%d\n", generations);
     bool *currentGeneration = calloc(width, sizeof(bool));
     if (currentGeneration == NULL) return 1;
 
@@ -136,7 +192,6 @@ int main() {
         }
     }
     
-    fp=fopen("savedautomata.txt", "w");
     printGeneration(currentGeneration, width, fp);    
 
     for(int i = 0; i < generations; ++i) {
