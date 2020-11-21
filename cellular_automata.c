@@ -47,7 +47,7 @@ int main() {
 
                     else if (lineNumber==1) {
                         unsigned char rulenum = (unsigned char) strtol(line,NULL,10);
-                        decToBin(rule, rulenum, 8);
+                        decToBin(rulenum, rule, 8);
                     }
                     else if (lineNumber==2) generations = atoi(line);
                     else if (lineNumber==generations+2) 
@@ -115,14 +115,15 @@ int main() {
             clean_stdin();
             int r = rand();
             int newRule = r%255;
-            rule = (unsigned char) newRule;
+            decToBin(newRule, rule, 8);
             printf("Generated rule: %d\n", newRule);
             unfinished=0;
         }
         else if (response=='n') 
         {
             clean_stdin();
-            rule = promptForRule();
+            unsigned char rulenum = promptForRule();
+            decToBin(rulenum, rule, 8);
             unfinished=0;
         }
         else 
@@ -131,7 +132,7 @@ int main() {
             printf("Wrong input.");
         }
     }
-    fprintf(fp, "%hhu\n", rule);
+    fprintf(fp, "%hhu\n", binToDec(rule, 8));
     generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
     fprintf(fp, "%d\n", generations);
     bool *currentGeneration = calloc(width, sizeof(bool));
