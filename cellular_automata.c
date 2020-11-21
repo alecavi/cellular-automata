@@ -18,7 +18,8 @@ void clean_stdin();
 int main() {
     int width, generations;
     bool rule[8];
-    FILE *fp;
+    FILE *fp = fopen("savedautomata.txt", "w");
+    fclose(fp);
     fp=fopen("savedautomata.txt", "r+");
     if(fp!=NULL) 
     {
