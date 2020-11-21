@@ -6,32 +6,202 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule);
-void printGeneration(bool *generation, int width);
+void printGeneration(bool *generation, int width, FILE *fp);
 long promptForInput(char *message, long min, long max);
 unsigned char promptForRule();
+void clean_stdin();
 
 //FIXME: Improve error handling for malloc failures
 int main() {
-    int width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
-    unsigned char rule = promptForRule();
-    int generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
+    int width, generations;
+    unsigned char rule;
+    FILE *fp;
+    fp=fopen("savedautomata.txt", "r+");
+    if(fp!=NULL) 
+    {
+        fseek(fp,0,SEEK_END);
+        if(ftell(fp)!=0)
+        {
+            fseek(fp,0,SEEK_SET);
+            printf("Would you like to load from file and continue running the automata? (y/n)\n");
+            char response;
+            scanf("%c", &response);
+            if(response=='y')
+            {
+                char *line=NULL;
+                size_t len = 0;
+                ssize_t read;
 
+                int lineNumber=0;
+                char lastGen[128];
+                while((read = getline(&line, &len, fp)) != -1)
+                {
+                    if(lineNumber==0) 
+                    {
+                        width = atoi(line);
+                    }
+
+                    else if (lineNumber==1) rule = (unsigned char) strtol(line,NULL,10);
+                    else if (lineNumber==2) generations = atoi(line);
+                    else if (lineNumber==generations+2) 
+                    {
+                        strcpy(lastGen,line);
+                        printf("%s", line);
+                    }
+                    else printf("%s", line);
+
+                    lineNumber++;
+                }
+
+                bool *newGen = calloc(width, sizeof(bool));
+                if (newGen == NULL) return 1;
+                for(int i=0; i<width; i++)
+                {
+                    if(lastGen[i]=='.')
+                    {
+                        newGen[i] = false;
+                    }
+                    else if(lastGen[i]=='#')
+                    {
+                        newGen[i] = true;
+                    }
+                }
+                clean_stdin();
+                generations = (int) promptForInput("Insert the amount of additional generations to run", 1, INT_MAX);
+
+                for(int i = 0; i < generations; ++i) {
+                    int err = advanceGeneration(newGen, width, rule);
+                    if (err != 0) return 1;
+
+                    printGeneration(newGen, width, fp);    
+                }
+            }
+            else if (response=='n') 
+            {
+                printf("Continuing program...\n");
+            }
+            else 
+            {
+                printf("Wrong input.\n");
+            }
+        }
+        fclose(fp);
+        fp=fopen("savedautomata.txt", "w");
+    }
+    else 
+    {
+        fclose(fp);
+        fp=fopen("savedautomata.txt", "w");
+    }
+    clean_stdin();
+    srand(time(NULL));
+    width = (int) promptForInput("Insert the width of the cellular array", 1, INT_MAX);
+    fprintf(fp, "%d\n", width);
+    int unfinished = 1;
+    while(unfinished)
+    {
+        printf("Would you like to autogenerate rule? (y/n)\n");
+        char response;
+        scanf("%c", &response);
+        if(response=='y')
+        {
+            clean_stdin();
+            int r = rand();
+            int newRule = r%255;
+            rule = (unsigned char) newRule;
+            printf("Generated rule: %d\n", newRule);
+            unfinished=0;
+        }
+        else if (response=='n') 
+        {
+            clean_stdin();
+            rule = promptForRule();
+            unfinished=0;
+        }
+        else 
+        {
+            clean_stdin();
+            printf("Wrong input.");
+        }
+    }
+    fprintf(fp, "%hhu\n", rule);
+    generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
+    fprintf(fp, "%d\n", generations);
     bool *currentGeneration = calloc(width, sizeof(bool));
     if (currentGeneration == NULL) return 1;
 
-    currentGeneration[width / 2 + 1] = true;
+    unfinished=1;
+    while(unfinished)
+    {
+    char response;
+    clean_stdin();
+    printf("Would you like to create first generation? (y/n)\n");
+    scanf("%c", &response);
+        if(response=='y')
+        {
+            int correctInput=0;
+            char input[width];
+            while(!correctInput)
+            {
+                clean_stdin();
+                printf("Enter first generation (e.g. ...##..###):\n");
+                scanf("%s",input);
+                int length = strlen(input);
+                if(width!=length)
+                {
+                    printf("Input length doesn't match width (width: %d)\n",width);
+                }
+                else
+                {
+                    correctInput=1;
+
+                    for(int i=0; i<width; i++)
+                    {
+                        if(input[i]=='.')
+                        {
+                            currentGeneration[i] = false;
+                        }
+                        else if(input[i]=='#')
+                        {
+                            currentGeneration[i] = true;
+                        }
+                        else 
+                        {
+                            printf("Found unrecognised character.\n");
+                            correctInput=0;
+                            break;
+                        }
+                    }
+                }
+            }
+            unfinished=0;
+        }
+        else if (response=='n') 
+        {
+            clean_stdin();
+            unfinished=0;
+            currentGeneration[width / 2] = true;
+        }
+        else 
+        {
+            clean_stdin();
+            printf("Wrong input.");
+        }
+    }
     
-    printGeneration(currentGeneration, width);    
+    printGeneration(currentGeneration, width, fp);    
 
     for(int i = 0; i < generations; ++i) {
         int err = advanceGeneration(currentGeneration, width, rule);
         if (err != 0) return 1;
 
-        printGeneration(currentGeneration, width);    
+        printGeneration(currentGeneration, width, fp);    
     }
     free(currentGeneration);
+    fclose(fp);
     return 0;
 }
 
@@ -43,8 +213,10 @@ int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule
         char parentsConfig = 0;
 
         if(i > 0 && currentGeneration[i - 1])               parentsConfig |= 4; //0b100
+        if(i == 0 && currentGeneration[gridWidth - 1])      parentsConfig |= 4; //0b100
         if(currentGeneration[i])                            parentsConfig |= 2; //0b010
         if(i < gridWidth - 1 && currentGeneration[i + 1])   parentsConfig |= 1; //0b001
+        if(i == gridWidth - 1 && currentGeneration[0])      parentsConfig |= 1; //0b001
 
         char mask = 1 << parentsConfig; 
 
@@ -55,15 +227,18 @@ int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule
     return 0;
 }
 
-void printGeneration(bool *generation, int width) {
+void printGeneration(bool *generation, int width, FILE *fp) {
     for(int i = 0; i < width; ++i) {
         if(generation[i]) {
            printf("#");
+           fprintf(fp, "#");
         } else {
            printf(".");
+           fprintf(fp, ".");
         }
     }
     printf("\n");
+    fprintf(fp, "\n");
 }
 
 long promptForInput(char *message, long min, long max) {
@@ -136,4 +311,13 @@ unsigned char promptForRule() {
             return (unsigned char) numOrErr;
         }
     }   
+}
+
+void clean_stdin(void)
+{
+    int c;
+    do 
+    {
+        c = getchar();
+    } while (c != '\n' && c != EOF);
 }
