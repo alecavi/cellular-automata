@@ -7,17 +7,17 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include "conversions.c"
 
-int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule);
+int advanceGeneration(bool *currentGeneration, int gridWidth, bool *rule);
 void printGeneration(bool *generation, int width, FILE *fp);
 long promptForInput(char *message, long min, long max);
 unsigned char promptForRule();
 void clean_stdin();
 
-//FIXME: Improve error handling for malloc failures
 int main() {
     int width, generations;
-    unsigned char rule;
+    bool rule[8];
     FILE *fp;
     fp=fopen("savedautomata.txt", "r+");
     if(fp!=NULL) 
@@ -44,7 +44,10 @@ int main() {
                         width = atoi(line);
                     }
 
-                    else if (lineNumber==1) rule = (unsigned char) strtol(line,NULL,10);
+                    else if (lineNumber==1) {
+                        unsigned char rulenum = (unsigned char) strtol(line,NULL,10);
+                        decToBin(rule, rulenum, 8);
+                    }
                     else if (lineNumber==2) generations = atoi(line);
                     else if (lineNumber==generations+2) 
                     {
@@ -131,7 +134,10 @@ int main() {
     generations = (int) promptForInput("Insert the amount of generations to run", 1, INT_MAX);
     fprintf(fp, "%d\n", generations);
     bool *currentGeneration = calloc(width, sizeof(bool));
-    if (currentGeneration == NULL) return 1;
+    if (currentGeneration == NULL) {
+        printf("Internal error: the program could not obtain necessary memory");
+        return 1;
+    }
 
     unfinished=1;
     while(unfinished)
@@ -201,16 +207,21 @@ int main() {
         printGeneration(currentGeneration, width, fp);    
     }
     free(currentGeneration);
+
     fclose(fp);
     return 0;
+
 }
 
-int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule) {
+int advanceGeneration(bool *currentGeneration, int gridWidth, bool *rule) {
     bool *nextGeneration = malloc(gridWidth * sizeof(bool));
-    if (nextGeneration == NULL) return 1;
+    if (nextGeneration == NULL) {
+        printf("Internal error: the program could not obtain necessary memory");
+        return 1;
+    }
 
     for(int i = 0; i < gridWidth; ++i) {
-        char parentsConfig = 0;
+        int parentsConfig = 0;
 
         if(i > 0 && currentGeneration[i - 1])               parentsConfig |= 4; //0b100
         if(i == 0 && currentGeneration[gridWidth - 1])      parentsConfig |= 4; //0b100
@@ -218,9 +229,8 @@ int advanceGeneration(bool *currentGeneration, int gridWidth, unsigned char rule
         if(i < gridWidth - 1 && currentGeneration[i + 1])   parentsConfig |= 1; //0b001
         if(i == gridWidth - 1 && currentGeneration[0])      parentsConfig |= 1; //0b001
 
-        char mask = 1 << parentsConfig; 
 
-       nextGeneration[i] = !!(rule & mask);
+       nextGeneration[i] = rule[parentsConfig];
     }
     memcpy(currentGeneration, nextGeneration, gridWidth * sizeof(bool));
     free(nextGeneration);
