@@ -91,7 +91,7 @@ int main() {
             while(!correctInput)
             {
                 clean_stdin();
-                printf("Enter first generation (e.g. 0001100):\n");
+                printf("Enter first generation (e.g. ...##..###):\n");
                 scanf("%s",input);
                 int length = strlen(input);
                 if(width!=length)
@@ -104,11 +104,11 @@ int main() {
 
                     for(int i=0; i<width; i++)
                     {
-                        if(input[i]=='0')
+                        if(input[i]=='.')
                         {
                             currentGeneration[i] = false;
                         }
-                        else if(input[i]=='1')
+                        else if(input[i]=='#')
                         {
                             currentGeneration[i] = true;
                         }
