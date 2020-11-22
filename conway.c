@@ -126,7 +126,7 @@ void showCells(Cell cells[][SIZE]) {
         for(int j = 0; j < SIZE; j++) {
 
             if(cells[i][j].isAlive) {
-                printf("* ");
+                printf("# ");
             } else {
                 printf("  ");
             }
@@ -153,7 +153,7 @@ bool allCellsDead(Cell cells[][SIZE]) {
     return deadCount == deadLim;
 }
 
-int main() {
+void runConway() {
 
     char yn;
     
@@ -162,18 +162,22 @@ int main() {
     initCells(cells);
     randomiseCells(cells, 0.25f);
 
+    //printf("Enter size of grid >>>  ");
+    // code for size edit
+    //printf("Enter number of generations to run >>>  ");
+
     while(true) {
         
         showCells(cells);
 
         if(allCellsDead(cells)){
             printf("All cells are dead. Terminating program.\n\n");
-            return 0;
+            return;
         }
 
         confirm:
 
-        printf("Go to next iteration? (Y/n) >>>  ");
+        printf("Enter 'y/Y' for next generation. Enter 'n/N' to quit >>>  ");
         yn = getchar();
 
         while(getchar() != '\n');
@@ -190,6 +194,10 @@ int main() {
         }
     }
 
-    return 0;
+    return;
 }
 
+// int main(){
+//     runConway();
+//     return 0;
+// }
